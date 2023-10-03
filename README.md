@@ -120,7 +120,7 @@ Para personalizar la configuración de la aplicación, edita el archivo `.env` y
 #### 10. Obtener Historial de Fichajes
 
 - **Método HTTP:** GET
-- **Ruta:** `https://localhost/api/fichajes`
+- **Ruta:** `/api/fichajes`
 - **Descripción:** Recupera el historial de fichajes de un empleado en particular o de todos los empleados. 
 
 #### 11. Obtener Estado Actual del Empleado
