@@ -13,7 +13,8 @@ module.exports = {
   
     // Otros errores
     incorrectRecoveryCodeError: () => createError(400, 'INCORRECT_RECOVERY_CODE', 'Código de recuperación incorrecto.'),
-    invalidCredentialsError: () => createError(401, 'INVALID_CREDENTIALS', 'Credenciales inválidas.'),
+    invalidCredentialsError: () => createError(403, 'FORBIDDEN', 'Acceso prohibido debido a credenciales inválidas.'),
+
     invalidTokenError: () => createError(401, 'INVALID_TOKEN', 'Token inválido.'),
     missingFieldsError: () => createError(400, 'MISSING_FIELDS', 'Faltan campos.'),
     notFoundError: () => createError(404, 'RESOURCE_NOT_FOUND', 'El recurso requerido no existe.'),

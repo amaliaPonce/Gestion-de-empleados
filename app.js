@@ -25,10 +25,13 @@ app.use(morgan('dev'));
 // Middleware que evita problemas con las CORS cuando intentamos conectar el cliente con
 // el servidor.
 const corsOptions = {
-    origin: 'http://localhost:3500',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
+  origin: 'https://localhost:5173',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
 };
+
+app.use(cors(corsOptions));
+
 
 app.use(cors(corsOptions));
 

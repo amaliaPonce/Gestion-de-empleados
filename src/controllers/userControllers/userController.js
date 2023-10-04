@@ -88,8 +88,9 @@ async function loginUser(req, res, next) {
       token,
     });
   } catch (error) {
+    console.error('Error en loginUser:', error);
     next(error);
-  }
+    }
 }
 
 async function logoutUser(req, res) {

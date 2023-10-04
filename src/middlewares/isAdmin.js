@@ -7,7 +7,7 @@ const isAdmin = async (req, res, next) => {
 
         if (req.user.userRole !== 'admin') {
             console.log("Usuario no es admin"); // Agrega este registro de consola para verificar el flujo de control
-            invalidCredentialsError();
+            throw errorService.invalidCredentialsError(); // Lanza un error específico
         } else {
             console.log("Usuario es admin"); // Agrega este registro de consola para verificar el flujo de control
         }

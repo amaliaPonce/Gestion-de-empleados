@@ -16,13 +16,15 @@ const userExist = async (req, res, next) => {
 
         const user = await userModel.findById(connection, userId);
         if (!user) {
-            notFoundError();
-        }
+            console.log('Usuario no encontrado');
+            throw errorService.notFoundError(); 
+                }
 
         next();
     } catch (err) {
-        next(err);
-    } finally {
+        console.error('Error en userExist:', error);
+        next(error);
+          } finally {
         if (connection) connection.release();
     }
 };

@@ -18,6 +18,7 @@ async function registerCheckin(req, res, next) {
   }
 }
 
+
 async function registerCheckout(req, res, next) {
   try {
     const userId = req.user.id;
