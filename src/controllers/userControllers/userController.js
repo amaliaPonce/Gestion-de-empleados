@@ -2,8 +2,8 @@ const getDb = require("../../../config/getDb");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { registerSchema, loginSchema, } = require('../../../config/validationSchemas');
-const errorService = require('../../services/errorservice');
-const savePhotoService = require("../../services/savePhotoService"); // Importa el servicio de guardado de fotos
+const errorService = require('../../services/errorService');
+const savePhotoService = require("../../services/savePhotoService");
 
 
 async function registerUser(req, res, next) {
@@ -151,9 +151,25 @@ async function getUserDetails(req, res, next) {
       res.json(responseData);
     }
   } catch (error) {
-    next(error); // Pasar el error al middleware de manejo de errores.
+    if (error.code === "UNAUTHORIZED") {
+      // Error específico para usuario no autorizado
+      res.status(403).json({
+        status: "error",
+        message: "Acceso no autorizado",
+      });
+    } else if (error.code === "RESOURCE_NOT_FOUND" && userId) {
+      // Error específico para usuario no encontrado por ID
+      res.status(404).json({
+        status: "error",
+        message: "Usuario no encontrado",
+      });
+    } else {
+      // Manejo de otros errores inesperados
+      next(error); // Pasar el error al middleware de manejo de errores global.
+    }
   }
 }
+
 
 
 async function updateUser(req, res, next) {

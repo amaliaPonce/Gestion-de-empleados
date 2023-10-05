@@ -1,4 +1,4 @@
-const { notFoundError } = require("../../services/errorservice");
+const { notFoundError } = require("../../services/errorService");
 
 const notFound = (req, res, next) => {
   next(notFoundError());

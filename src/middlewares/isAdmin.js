@@ -1,5 +1,5 @@
 // Importamos los errores.
-const { invalidCredentialsError } = require('../services/errorservice');
+const { invalidCredentialsError } = require('../services/errorService');
 
 const isAdmin = async (req, res, next) => {
     try {

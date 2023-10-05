@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { notAuthenticatedError, decryptionError } = require('../services/errorservice');
+const { notAuthenticatedError, decryptionError } = require('../services/errorService');
 
 const authUser = async (req, res, next) => {
   try {

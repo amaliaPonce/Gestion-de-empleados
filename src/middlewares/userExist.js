@@ -3,7 +3,7 @@ const getDb = require('../../config/getDb');
 const userModel = require('../models/userModel');
 
 // Importamos los errores.
-const { notFoundError } = require('../services/errorservice');
+const { notFoundError } = require('../services/errorService');
 
 // Función controladora intermedia que lanza un error si no existe un usuario con un id dado.
 const userExist = async (req, res, next) => {
