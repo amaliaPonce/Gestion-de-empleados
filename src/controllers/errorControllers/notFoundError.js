@@ -1,7 +1,7 @@
-const { notFoundError } = require("../../services/errorService");
+const errorService = require("../../services/errorService");
 
 const notFound = (req, res, next) => {
-  next(notFoundError());
+  next(errorService.notFoundError());
 };
 
 module.exports = notFound;

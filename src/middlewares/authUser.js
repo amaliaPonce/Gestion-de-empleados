@@ -12,7 +12,6 @@ const authUser = async (req, res, next) => {
 
     try {
       const tokenInfo = jwt.verify(authorization, process.env.JWT_SECRET);
-      // Asignamos la información del usuario decodificada a req.user.
       req.user = tokenInfo;
       req.body.userId = tokenInfo.id;
        

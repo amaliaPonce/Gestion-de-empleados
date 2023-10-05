@@ -1,16 +1,13 @@
 const getDb = require("../../../config/getDb");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { registerSchema, loginSchema, } = require('../../../config/validationSchemas');
-const errorService = require('../../services/errorService');
+const { registerSchema, loginSchema } = require('../../../config/validationSchemas');
 const savePhotoService = require("../../services/savePhotoService");
-
 
 async function registerUser(req, res, next) {
   try {
     const { name, email, password } = req.body;
 
-    // Valida los datos de entrada con Joi
     const { error } = registerSchema.validate(req.body);
 
     if (error) {
@@ -23,7 +20,7 @@ async function registerUser(req, res, next) {
     const [existingUser] = await connection.query('SELECT id FROM users WHERE email = ?', [email]);
 
     if (existingUser.length > 0) {
-      throw errorService.emailAlreadyRegisteredError();
+      throw createError(409, 'Usuario ya registrado', 'El correo electrónico ya está en uso.');
     }
 
     const insertUserResult = await connection.query(
@@ -37,13 +34,12 @@ async function registerUser(req, res, next) {
 
       res.status(201).json({ message: 'Usuario registrado con éxito', id: userId, token });
     } else {
-      throw errorService.saveFileError();
+      throw createError(500, 'Error al guardar el usuario', 'Error al guardar el usuario en la base de datos.');
     }
   } catch (error) {
     next(error);
   }
 }
-
 
 async function loginUser(req, res, next) {
   try {
@@ -61,13 +57,13 @@ async function loginUser(req, res, next) {
     const [[user]] = await connection.query('SELECT * FROM users WHERE id = ?', [id]);
 
     if (!user) {
-      throw errorService.notFoundError();
+      throw createError(404, 'Usuario no encontrado', 'El usuario no existe.');
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
-      throw errorService.invalidCredentialsError();
+      throw createError(401, 'Credenciales inválidas', 'La contraseña es incorrecta.');
     }
 
     const token = jwt.sign(
@@ -90,12 +86,11 @@ async function loginUser(req, res, next) {
   } catch (error) {
     console.error('Error en loginUser:', error);
     next(error);
-    }
+  }
 }
 
 async function logoutUser(req, res) {
   try {
-
     console.log("Cierre de sesión exitoso.");
     res.json({ message: "Cierre de sesión exitoso" });
   } catch (error) {
@@ -110,7 +105,7 @@ async function getUserDetails(req, res, next) {
     const connection = await getDb();
 
     if (req.user.userRole !== "admin") {
-      throw errorService.unauthorizedUserError(); // Error personalizado para usuario no autorizado.
+      throw createError(403, 'Acceso no autorizado', 'No tienes permisos para acceder a esta información.');
     }
 
     if (userId) {
@@ -120,7 +115,7 @@ async function getUserDetails(req, res, next) {
       );
 
       if (!user) {
-        throw errorService.notFoundError(); // Error personalizado para usuario no encontrado.
+        throw createError(404, 'Usuario no encontrado', 'El usuario no existe.');
       }
 
       delete user[0].password;
@@ -151,30 +146,13 @@ async function getUserDetails(req, res, next) {
       res.json(responseData);
     }
   } catch (error) {
-    if (error.code === "UNAUTHORIZED") {
-      // Error específico para usuario no autorizado
-      res.status(403).json({
-        status: "error",
-        message: "Acceso no autorizado",
-      });
-    } else if (error.code === "RESOURCE_NOT_FOUND" && userId) {
-      // Error específico para usuario no encontrado por ID
-      res.status(404).json({
-        status: "error",
-        message: "Usuario no encontrado",
-      });
-    } else {
-      // Manejo de otros errores inesperados
-      next(error); // Pasar el error al middleware de manejo de errores global.
-    }
+    next(error);
   }
 }
 
-
-
 async function updateUser(req, res, next) {
   const { userId } = req.params;
-  const { username, name, email, other_details } = req.body; 
+  const { username, name, email, other_details, userRole } = req.body; // Agrega userRole
 
   try {
     const connection = await getDb();
@@ -192,6 +170,10 @@ async function updateUser(req, res, next) {
       updateFields.push("username = ?");
       updateValues.push(username);
     }
+    if (userRole) {
+      updateFields.push("userRole = ?");
+      updateValues.push(userRole);
+    }
 
     if (name) {
       updateFields.push("name = ?");
@@ -206,12 +188,9 @@ async function updateUser(req, res, next) {
     // Actualiza la foto de perfil si se proporciona
     if (req.files && req.files.profile_photo) {
       const imgData = req.files.profile_photo.data;
-      const width = 200; // Puedes ajustar el ancho de la imagen aquí
+      const width = 200;
 
-      // Guarda la nueva foto de perfil y obtén su nombre
       const newProfilePhotoName = await savePhotoService(imgData, width);
-
-      // Agrega el campo de la foto de perfil actualizado a la base de datos
       updateFields.push("profile_photo = ?");
       updateValues.push(newProfilePhotoName);
     }
@@ -239,7 +218,6 @@ async function updateUser(req, res, next) {
   }
 }
 
-
 async function deleteUser(req, res, next) {
   const { userId } = req.params;
 
@@ -247,7 +225,7 @@ async function deleteUser(req, res, next) {
     const connection = await getDb();
 
     if (req.user.userRole !== "admin") {
-      throw errorService.unauthorizedUserError();
+      throw createError(403, 'Acceso no autorizado', 'No tienes permisos para eliminar este usuario.');
     }
 
     await connection.query("DELETE FROM records WHERE user_id = ?", [userId]);
@@ -255,7 +233,7 @@ async function deleteUser(req, res, next) {
     const [deleteUserResult] = await connection.query("DELETE FROM users WHERE id = ?", [userId]);
 
     if (deleteUserResult.affectedRows === 0) {
-      throw errorService.notFoundError();
+      throw createError(404, 'Usuario no encontrado', 'El usuario no existe.');
     }
 
     console.log("Cuenta de usuario eliminada con éxito.");
@@ -265,6 +243,12 @@ async function deleteUser(req, res, next) {
   }
 }
 
+function createError(httpStatus, code, message) {
+  const error = new Error(message);
+  error.status = httpStatus;
+  error.code = code;
+  return error;
+}
 
 module.exports = {
   registerUser,
