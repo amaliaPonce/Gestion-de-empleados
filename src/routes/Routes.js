@@ -21,9 +21,9 @@ router.post('/api/logout', userController.logoutUser);
 router.get('/users/profile/:userId', authUser, userExist,isAdmin, userController.getUserDetails);
 // Ruta para obtener el perfil de todos los usuarios
 router.get('/users/profile',authUser,userExist,isAdmin, userController.getUserDetails);
-// Actualizar un usuario
+// Actualizar un usuario y actualizar Rol de usuario
 router.put('/api/users/:userId', authUser,userExist,isAdmin, userController.updateUser);
-// Eliminar un usuario
+// Eliminar un usuario FALTA
 router.delete('/api/users/:userId', authUser,userExist,isAdmin, userController.deleteUser);
 
 // Ruta para hacer checking
@@ -32,13 +32,10 @@ router.post('/api/checkin', authUser, userExist, checkController.registerCheckin
 // Ruta para hacer checkout
 router.post('/api/checkout', authUser, userExist, checkController.registerCheckout);
 
-// Ruta para ver la lista de fichajes
+// Ruta para ver la lista de fichajes FALTA
 router.get('/api/fichajes', authUser, userExist, checkController.getFichajes);
-// Ruta para ver el estado del usuario
+// Ruta para ver el estado del usuario FALTA 
 router.get('/api/estado', authUser, userExist, checkController.getEstado);
 
 
-
-
-// Exporta el router para su uso en tu archivo principal (app.js)
 module.exports = router;
