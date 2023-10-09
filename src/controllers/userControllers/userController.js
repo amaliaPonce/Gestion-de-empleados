@@ -3,6 +3,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { registerSchema, loginSchema } = require('../../../config/validationSchemas');
 const savePhotoService = require("../../services/savePhotoService");
+const errorService = require("../../services/errorService");
+
 
 async function registerUser(req, res, next) {
   try {
@@ -12,7 +14,7 @@ async function registerUser(req, res, next) {
 
     if (error) {
       console.error('Error de validación:', error.details);
-      return res.status(400).json({ message: 'Error de validación', details: error.details });
+      throw errorService.createError(400, 'ValidationError', 'Error de validación', error.details);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -20,7 +22,7 @@ async function registerUser(req, res, next) {
     const [existingUser] = await connection.query('SELECT id FROM users WHERE email = ?', [email]);
 
     if (existingUser.length > 0) {
-      throw createError(409, 'Usuario ya registrado', 'El correo electrónico ya está en uso.');
+      throw errorService.emailAlreadyRegisteredError();
     }
 
     const insertUserResult = await connection.query(
@@ -34,12 +36,13 @@ async function registerUser(req, res, next) {
 
       res.status(201).json({ message: 'Usuario registrado con éxito', id: userId, token });
     } else {
-      throw createError(500, 'Error al guardar el usuario', 'Error al guardar el usuario en la base de datos.');
+      throw errorService.createError(500, 'DatabaseError', 'Error al guardar el usuario en la base de datos.');
     }
   } catch (error) {
     next(error);
   }
 }
+
 
 async function loginUser(req, res, next) {
   try {
@@ -57,13 +60,13 @@ async function loginUser(req, res, next) {
     const [[user]] = await connection.query('SELECT * FROM users WHERE id = ?', [id]);
 
     if (!user) {
-      throw createError(404, 'Usuario no encontrado', 'El usuario no existe.');
+      throw errorService.notFoundError();
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
-      throw createError(401, 'Credenciales inválidas', 'La contraseña es incorrecta.');
+      throw errorService.invalidCredentialsError();
     }
 
     const token = jwt.sign(
@@ -88,6 +91,7 @@ async function loginUser(req, res, next) {
     next(error);
   }
 }
+
 
 async function logoutUser(req, res) {
   try {
@@ -189,11 +193,15 @@ async function updateUser(req, res, next) {
     if (req.files && req.files.profile_photo) {
       const imgData = req.files.profile_photo.data;
       const width = 200;
-
+    
       const newProfilePhotoName = await savePhotoService(imgData, width);
       updateFields.push("profile_photo = ?");
       updateValues.push(newProfilePhotoName);
+    
+      // Agregar el campo updated_at
+      updateFields.push("updated_at = NOW()"); // Utiliza la función NOW() de MySQL para obtener la fecha y hora actuales
     }
+    
 
     if (other_details) {
       updateFields.push("other_details = ?");
@@ -204,6 +212,9 @@ async function updateUser(req, res, next) {
       ", "
     )} WHERE id = ?`;
     updateValues.push(userId);
+
+    console.log("Update Query:", updateQuery);
+    console.log("Update Values:", updateValues);
 
     const [updateResult] = await connection.query(updateQuery, updateValues);
 
@@ -217,6 +228,7 @@ async function updateUser(req, res, next) {
     next(error);
   }
 }
+
 
 async function deleteUser(req, res, next) {
   const { userId } = req.params;

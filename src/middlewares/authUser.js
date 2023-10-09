@@ -14,11 +14,11 @@ const authUser = async (req, res, next) => {
       const tokenInfo = jwt.verify(authorization, process.env.JWT_SECRET);
       req.user = tokenInfo;
       req.body.userId = tokenInfo.id;
-       
+      
       next();
     } catch (err) {
       console.log('Error al decodificar el token:', err);
-      return next(decryptionError()); 
+      return next(decryptionError());
     }
   } catch (err) {
     console.log('Error en el middleware authUser:', err);

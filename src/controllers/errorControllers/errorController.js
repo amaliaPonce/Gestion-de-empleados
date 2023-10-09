@@ -1,7 +1,7 @@
-const errorController = (err, req, res, next) => {
-    res.status(err.httpStatus || 500).send({
+const errorController = (error, req, res, next) => { // Cambia 'err' a 'error'
+    res.status(error.httpStatus || 500).send({
         status: 'error',
-        message: err.message,
+        message: error.message,
     });
 };
 
