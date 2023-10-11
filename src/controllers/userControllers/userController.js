@@ -7,6 +7,7 @@ const errorService = require("../../services/errorService");
 
 
 async function registerUser(req, res, next) {
+  let connection;
   try {
     const { name, email, password } = req.body;
 
@@ -18,7 +19,7 @@ async function registerUser(req, res, next) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const connection = await getDb();
+    connection = await getDb();
     const [existingUser] = await connection.query('SELECT id FROM users WHERE email = ?', [email]);
 
     if (existingUser.length > 0) {
@@ -40,14 +41,17 @@ async function registerUser(req, res, next) {
     }
   } catch (error) {
     next(error);
+  } finally {
+    if (connection) connection.release();
   }
 }
 
 
 async function loginUser(req, res, next) {
+  let connection;
   try {
     const { id, password } = req.body;
-    const connection = await getDb();
+    connection = await getDb();
 
     // Valida los datos de entrada con Joi
     const { error } = loginSchema.validate(req.body);
@@ -89,6 +93,8 @@ async function loginUser(req, res, next) {
   } catch (error) {
     console.error('Error en loginUser:', error);
     next(error);
+  } finally {
+    if (connection) connection.release();
   }
 }
 
@@ -100,13 +106,16 @@ async function logoutUser(req, res) {
   } catch (error) {
     console.error("Error al cerrar sesión:", error);
     res.status(500).json({ error: "Error al cerrar sesión" });
+  }  finally {
+    //if (connection) connection.release();
   }
 }
 
 async function getUserDetails(req, res, next) {
+  let connection;
   try {
     const { userId } = req.params;
-    const connection = await getDb();
+    connection = await getDb();
 
     if (req.user.userRole !== "admin") {
       throw createError(403, 'Acceso no autorizado', 'No tienes permisos para acceder a esta información.');
@@ -151,15 +160,18 @@ async function getUserDetails(req, res, next) {
     }
   } catch (error) {
     next(error);
+  } finally {
+    if (connection) connection.release();
   }
 }
 
 async function updateUser(req, res, next) {
+  let connection;
   const { userId } = req.params;
   const { username, name, email, other_details, userRole } = req.body; // Agrega userRole
 
   try {
-    const connection = await getDb();
+    connection = await getDb();
 
     if (req.user.userRole !== "admin" && req.user.id !== userId) {
       return res
@@ -226,15 +238,18 @@ async function updateUser(req, res, next) {
     res.json({ message: "Perfil de usuario actualizado con éxito" });
   } catch (error) {
     next(error);
+  } finally {
+    if (connection) connection.release();
   }
 }
 
 
 async function deleteUser(req, res, next) {
+  let connection;
   const { userId } = req.params;
 
   try {
-    const connection = await getDb();
+    connection = await getDb();
 
     if (req.user.userRole !== "admin") {
       throw createError(403, 'Acceso no autorizado', 'No tienes permisos para eliminar este usuario.');
@@ -252,14 +267,51 @@ async function deleteUser(req, res, next) {
     res.json({ message: "Cuenta de usuario eliminada con éxito" });
   } catch (error) {
     next(error);
-  }
+  } finally {
+    if (connection) connection.release();
+  } 
 }
 
-function createError(httpStatus, code, message) {
-  const error = new Error(message);
-  error.status = httpStatus;
-  error.code = code;
-  return error;
+async function getUserProfilePhoto(req, res, next) {
+  let connection;
+  try {
+    const { userId } = req.params;
+    connection = await getDb();
+
+    const [user] = await connection.query(
+      "SELECT profile_photo FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (!user || !user[0].profile_photo) {
+      return res.status(404).json({ error: "Usuario o imagen de perfil no encontrados." });
+    }
+
+    // Construir la ruta completa de la imagen de perfil
+    const profilePhotoPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      process.env.UPLOADS_DIR,
+      user[0].profile_photo
+    );
+
+    // Verificar si el archivo de la imagen de perfil existe
+    const exists = await fs.promises.access(profilePhotoPath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (!exists) {
+      return res.status(404).json({ error: "Imagen de perfil no encontrada." });
+    }
+
+    // Enviar la imagen como respuesta
+    res.sendFile(profilePhotoPath);
+  } catch (error) {
+    next(error);
+  } finally {
+    if (connection) connection.release();
+  }
 }
 
 module.exports = {
@@ -269,4 +321,5 @@ module.exports = {
   getUserDetails,
   updateUser,
   deleteUser,
+  getUserProfilePhoto,
 };

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const app = express();
+const path = require('path');
 
 // Importa tus controladores aquí
 const userController = require('../controllers/userControllers/userController');
@@ -38,9 +39,13 @@ router.post('/api/checkout', authUser, userExist, checkController.registerChecko
 router.get('/api/fichajes', authUser, userExist, checkController.getFichajes);
 // Ruta para ver el estado del usuario FALTA 
 router.get('/api/estado', authUser, userExist, checkController.getEstado);
+  
+router.use(
+    '/uploads',
+    express.static(path.join(__dirname, '..', '..', process.env.UPLOADS_DIR))
+);
 
-app.use('/uploads', express.static('uploads'));
-
+  
 // Middleware de manejo de errores
 app.use(errorController);
 
