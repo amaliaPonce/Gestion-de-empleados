@@ -20,8 +20,6 @@ async function registerCheckin(req, res, next) {
     if (connection) connection.release();
   }
 }
-
-
 async function registerCheckout(req, res, next) {
   let connection;
   try {
@@ -42,7 +40,6 @@ async function registerCheckout(req, res, next) {
     if (connection) connection.release();
   }
 }
-
 async function getFichajes(req, res, next) {
   let connection;
   try {
@@ -78,7 +75,7 @@ async function getEstado(req, res, next) {
     if (!userId) {
       return res
         .status(400)
-        .json({ message: "Se requiere un userId en la consulta" });
+        .json({ error: "Se requiere un userId en la consulta" });
     }
 
     // Obtén los registros más recientes del usuario
@@ -88,41 +85,27 @@ async function getEstado(req, res, next) {
       [userId]
     );
 
-    // Agrega console.log para depuración
-    console.log('Latest Record:', latestRecord);
-
     if (!latestRecord) {
-      console.log('No se encontraron registros para el usuario.');
-      return res.status(200).json({ message: "El usuario está fuera" });
+      return res.status(200).json({ state: "outside" });
     }
-    
-    console.log('Latest Record Type:', latestRecord.type);
-    
-    if (latestRecord.length > 0) {
-      const latestRecordType = latestRecord[0].type;
-      console.log('Latest Record Type:', latestRecordType);
-    
-      if (latestRecordType === "Entry") {
-        console.log('El usuario está dentro.');
-        return res.status(200).json({ message: "El usuario está dentro" });
-      } else if (latestRecordType === "Exit") {
-        console.log('El usuario está fuera.');
-        return res.status(200).json({ message: "El usuario está fuera" });
-      }
+
+    const latestRecordType = latestRecord[0].type;
+
+    if (latestRecordType === "Entry") {
+      return res.status(200).json({ state: "inside" });
+    } else if (latestRecordType === "Exit") {
+      return res.status(200).json({ state: "outside" });
     }
-    
-    console.log('No se encontraron registros para el usuario o el tipo de registro es desconocido.');
-    return res.status(200).json({ message: "Estado desconocido" });
-          
+
+    return res.status(200).json({ state: "unknown" });
+
   } catch (error) {
-    console.error("Error al obtener estado actual del empleado:", error);
+    console.error("Error al obtener el estado actual del empleado:", error);
     next(error);
   } finally {
     if (connection) connection.release();
   }
-}
-  
-  
+} 
   
 module.exports = {
   registerCheckin,
