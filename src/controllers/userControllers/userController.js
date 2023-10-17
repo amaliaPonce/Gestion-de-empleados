@@ -117,10 +117,6 @@ async function getUserDetails(req, res, next) {
     const { userId } = req.params;
     connection = await getDb();
 
-    if (req.user.userRole !== "admin") {
-      throw createError(403, 'Acceso no autorizado', 'No tienes permisos para acceder a esta información.');
-    }
-
     if (userId) {
       const [user] = await connection.query(
         "SELECT id, username, name, email, profile_photo, other_details, created_at, userRole FROM users WHERE id = ?",
@@ -164,6 +160,7 @@ async function getUserDetails(req, res, next) {
     if (connection) connection.release();
   }
 }
+
 
 async function updateUser(req, res, next) {
   let connection;

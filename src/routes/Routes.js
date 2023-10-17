@@ -21,9 +21,9 @@ router.post('/api/login', userController.loginUser);
 //logout
 router.post('/api/logout', userController.logoutUser);
 // Ruta para obtener el perfil de un usuario por su ID
-router.get('/users/profile/:userId', authUser, userExist,isAdmin, userController.getUserDetails);
+router.get('/users/profile/:userId', authUser, userExist, userController.getUserDetails);
 // Ruta para obtener enol perfil de todos los usuarios
-router.get('/users/profile',authUser,userExist,isAdmin, userController.getUserDetails);
+router.get('/users/profile',authUser,userExist, userController.getUserDetails);
 // Actualizar un usuario y actualizar Rol de usuario
 router.put('/api/users/:userId', authUser,userExist,isAdmin, userController.updateUser);
 // Eliminar un usuario 
